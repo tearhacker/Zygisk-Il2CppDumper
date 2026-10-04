@@ -25,6 +25,20 @@
 
 static uint64_t il2cpp_base = 0;
 
+bool il2cpp_dump_available() {
+    return il2cpp_domain_get_assemblies &&
+           il2cpp_assembly_get_image &&
+           il2cpp_image_get_name &&
+           il2cpp_image_get_class_count &&
+           il2cpp_image_get_class &&
+           il2cpp_class_get_type &&
+           il2cpp_class_get_name &&
+           il2cpp_class_get_namespace &&
+           il2cpp_class_get_methods &&
+           il2cpp_class_get_fields &&
+           il2cpp_class_get_properties;
+}
+
 void init_il2cpp_api(void *handle) {
 #define DO_API(r, n, p) {                      \
     n = (r (*) p)xdl_sym(handle, #n, nullptr); \
@@ -325,7 +339,8 @@ std::string dump_type(const Il2CppType *type) {
 void il2cpp_api_init(void *handle) {
     LOGI("il2cpp_handle: %p", handle);
     init_il2cpp_api(handle);
-    if (il2cpp_domain_get_assemblies) {
+    if (il2cpp_domain_get_assemblies && il2cpp_domain_get &&
+        il2cpp_thread_attach && il2cpp_is_vm_thread) {
         Dl_info dlInfo;
         if (dladdr((void *) il2cpp_domain_get_assemblies, &dlInfo)) {
             il2cpp_base = reinterpret_cast<uint64_t>(dlInfo.dli_fbase);

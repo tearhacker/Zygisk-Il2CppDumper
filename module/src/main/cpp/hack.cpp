@@ -4,6 +4,7 @@
 
 #include "hack.h"
 #include "il2cpp_dump.h"
+#include "htpx_dump.h"
 #include "log.h"
 #include "xdl.h"
 #include <cstring>
@@ -23,8 +24,23 @@ void hack_start(const char *game_data_dir) {
         void *handle = xdl_open("libil2cpp.so", 0);
         if (handle) {
             load = true;
+            // This target uses an HTPX metadata container and strips the public
+            // class-enumeration exports. Extract the live metadata first so the
+            // fallback never calls a missing il2cpp_* function.
+            for (int retry = 0; retry < 5; ++retry) {
+                if (htpx_dump(game_data_dir)) {
+                    LOGI("HTPX runtime dump completed");
+                    return;
+                }
+                sleep(1);
+            }
+
             il2cpp_api_init(handle);
-            il2cpp_dump(game_data_dir);
+            if (il2cpp_dump_available()) {
+                il2cpp_dump(game_data_dir);
+            } else {
+                LOGW("standard il2cpp dump API set is incomplete");
+            }
             break;
         } else {
             sleep(1);
